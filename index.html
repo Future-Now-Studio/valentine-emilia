@@ -302,19 +302,84 @@
         const fullscreenOverlay = document.getElementById('fullscreenOverlay');
         
         let noButtonMoveCount = 0;
+        let yesButtonInitialPosition = null;
+        let noButtonPlaceholder = null;
+        let wassolldasCount = 0;
+        let auaCount = 0;
+
+        // Store initial position of Yes button and create placeholder for No button
+        function initializeButtonPositions() {
+            // Store Yes button's initial position
+            const yesBtnRect = yesBtn.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            yesButtonInitialPosition = {
+                left: yesBtnRect.left - containerRect.left,
+                top: yesBtnRect.top - containerRect.top
+            };
+            
+            // Create invisible placeholder for No button to maintain layout
+            noButtonPlaceholder = document.createElement('div');
+            noButtonPlaceholder.style.width = noBtn.offsetWidth + 'px';
+            noButtonPlaceholder.style.height = noBtn.offsetHeight + 'px';
+            noButtonPlaceholder.style.visibility = 'hidden';
+            noButtonPlaceholder.style.pointerEvents = 'none';
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', initializeButtonPositions);
+        // Also initialize if DOM is already loaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(initializeButtonPositions, 0);
+        }
 
         // Function to move the button and check if fullscreen should appear
         function moveNoButton() {
             noButtonMoveCount++;
             
-            // After 5 moves, show the fullscreen image
-            if (noButtonMoveCount >= 5) {
-                fullscreenOverlay.classList.add('show');
-                
-                // Hide after 2 seconds
-                setTimeout(() => {
-                    fullscreenOverlay.classList.remove('show');
-                }, 2000);
+            // Initialize if not done yet
+            if (!yesButtonInitialPosition) {
+                initializeButtonPositions();
+            }
+            
+            // Show fullscreen image every 5 moves
+            if (noButtonMoveCount % 5 === 0 && noButtonMoveCount > 0) {
+                // Determine which image to show based on how many times each has been shown
+                if (wassolldasCount < 2) {
+                    // Show wassolldas.png
+                    fullscreenImage.src = 'wassolldas.png';
+                    wassolldasCount++;
+                    fullscreenOverlay.classList.add('show');
+                    
+                    // Hide after 2 seconds
+                    setTimeout(() => {
+                        fullscreenOverlay.classList.remove('show');
+                    }, 2000);
+                } else if (auaCount < 2) {
+                    // Show aua.png
+                    fullscreenImage.src = 'aua.png';
+                    auaCount++;
+                    fullscreenOverlay.classList.add('show');
+                    
+                    // Hide after 2 seconds
+                    setTimeout(() => {
+                        fullscreenOverlay.classList.remove('show');
+                        
+                        // After showing aua.png 2 times, navigate to the URL
+                        if (auaCount >= 2) {
+                            setTimeout(() => {
+                                window.location.href = 'https://www.gesundheit.de/medizin/psychologie/test-psychopath-id215271/';
+                            }, 500);
+                        }
+                    }, 2000);
+                } else {
+                    // Both images shown 2 times, navigate immediately
+                    window.location.href = 'https://www.gesundheit.de/medizin/psychologie/test-psychopath-id215271/';
+                }
+            }
+            
+            // Add placeholder to maintain layout space for No button
+            if (noButtonMoveCount === 1 && noButtonPlaceholder && !noBtn.parentElement.contains(noButtonPlaceholder)) {
+                noBtn.parentElement.insertBefore(noButtonPlaceholder, noBtn.nextSibling);
             }
             
             // Get actual viewport dimensions (accounting for scrollbars if any)
@@ -344,13 +409,80 @@
                 return;
             }
             
-            // Generate random position within safe bounds
-            const randomX = minX + Math.random() * (maxX - minX);
-            const randomY = minY + Math.random() * (maxY - minY);
+            // Get Yes button's position to avoid overlap
+            const yesBtnRect = yesBtn.getBoundingClientRect();
+            const yesBtnX = yesBtnRect.left;
+            const yesBtnY = yesBtnRect.top;
+            const yesBtnWidth = yesBtnRect.width;
+            const yesBtnHeight = yesBtnRect.height;
             
-            // Clamp to ensure it's within bounds (safety check)
-            const finalX = Math.max(minX, Math.min(maxX, randomX));
-            const finalY = Math.max(minY, Math.min(maxY, randomY));
+            // Minimum distance between buttons (padding to avoid overlap)
+            const buttonPadding = 10;
+            
+            // Function to check if position overlaps with Yes button
+            function overlapsYesButton(x, y) {
+                const noBtnRight = x + buttonWidth;
+                const noBtnBottom = y + buttonHeight;
+                const yesBtnRight = yesBtnX + yesBtnWidth;
+                const yesBtnBottom = yesBtnY + yesBtnHeight;
+                
+                // Check if rectangles overlap (with padding)
+                return !(noBtnRight + buttonPadding < yesBtnX - buttonPadding ||
+                        x - buttonPadding > yesBtnRight + buttonPadding ||
+                        noBtnBottom + buttonPadding < yesBtnY - buttonPadding ||
+                        y - buttonPadding > yesBtnBottom + buttonPadding);
+            }
+            
+            // Generate random position that doesn't overlap with Yes button
+            let finalX, finalY;
+            let attempts = 0;
+            const maxAttempts = 50; // Prevent infinite loop
+            
+            do {
+                const randomX = minX + Math.random() * (maxX - minX);
+                const randomY = minY + Math.random() * (maxY - minY);
+                
+                // Clamp to ensure it's within bounds (safety check)
+                finalX = Math.max(minX, Math.min(maxX, randomX));
+                finalY = Math.max(minY, Math.min(maxY, randomY));
+                
+                attempts++;
+            } while (overlapsYesButton(finalX, finalY) && attempts < maxAttempts);
+            
+            // If we couldn't find a non-overlapping position after max attempts, 
+            // place it as far as possible from Yes button
+            if (attempts >= maxAttempts) {
+                // Calculate distance from Yes button center
+                const yesBtnCenterX = yesBtnX + yesBtnWidth / 2;
+                const yesBtnCenterY = yesBtnY + yesBtnHeight / 2;
+                
+                // Try corners first (furthest from center)
+                const corners = [
+                    [minX, minY], // Top-left
+                    [maxX, minY], // Top-right
+                    [minX, maxY], // Bottom-left
+                    [maxX, maxY]  // Bottom-right
+                ];
+                
+                let bestX = corners[0][0];
+                let bestY = corners[0][1];
+                let maxDistance = 0;
+                
+                for (const [x, y] of corners) {
+                    const distance = Math.sqrt(
+                        Math.pow(x + buttonWidth / 2 - yesBtnCenterX, 2) +
+                        Math.pow(y + buttonHeight / 2 - yesBtnCenterY, 2)
+                    );
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                        bestX = x;
+                        bestY = y;
+                    }
+                }
+                
+                finalX = bestX;
+                finalY = bestY;
+            }
             
             // Position relative to viewport
             noBtn.style.position = 'fixed';
@@ -359,6 +491,7 @@
             noBtn.style.right = 'auto';
             noBtn.style.bottom = 'auto';
             noBtn.style.transition = 'all 0.3s ease';
+            noBtn.style.zIndex = '1000'; // Ensure it's above other elements
         }
 
         // Create floating hearts
