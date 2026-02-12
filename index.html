@@ -2,24 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Will you be my Valentine?</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Arial', sans-serif;
             background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffa8c5 100%);
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            max-height: 100vh;
+            max-height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            position: relative;
+            overflow: hidden; /* Prevent all scrolling */
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            padding: 20px 10px;
+        }
+
+        html {
+            overflow: hidden; /* Prevent scrolling on html element too */
+            height: 100%;
+            position: fixed;
+            width: 100%;
         }
 
         .hearts {
@@ -57,40 +75,49 @@
         .container {
             text-align: center;
             background: rgba(255, 255, 255, 0.95);
-            padding: 60px 40px;
-            border-radius: 30px;
+            padding: clamp(20px, 5vw, 40px) clamp(15px, 4vw, 30px);
+            border-radius: clamp(20px, 5vw, 30px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
             z-index: 10;
             max-width: 500px;
             width: 90%;
+            width: min(90%, 500px);
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         h1 {
             color: #d63384;
-            font-size: 2.5em;
-            margin-bottom: 30px;
+            font-size: clamp(1.8rem, 6vw, 2.5rem);
+            margin-bottom: clamp(20px, 4vw, 30px);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            line-height: 1.2;
         }
 
         .question {
             color: #333;
-            font-size: 1.3em;
-            margin-bottom: 40px;
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            margin-bottom: clamp(30px, 5vw, 40px);
             font-weight: 300;
+            line-height: 1.4;
         }
 
         .buttons {
             display: flex;
-            gap: 20px;
+            gap: clamp(15px, 4vw, 20px);
             justify-content: center;
             flex-wrap: wrap;
             position: relative;
+            min-height: 60px; /* Ensure space for moving button */
         }
 
         button {
-            padding: 15px 40px;
-            font-size: 1.2em;
+            padding: clamp(14px, 4vw, 15px) clamp(30px, 8vw, 40px);
+            font-size: clamp(1rem, 4vw, 1.2rem);
             border: none;
             border-radius: 50px;
             cursor: pointer;
@@ -98,6 +125,9 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             position: relative;
+            min-width: 120px;
+            min-height: 48px; /* Touch-friendly minimum size */
+            touch-action: manipulation; /* Prevent double-tap zoom */
         }
 
         .yes-btn {
@@ -105,9 +135,15 @@
             color: white;
         }
 
-        .yes-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        .yes-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (hover: hover) {
+            .yes-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            }
         }
 
         .no-btn {
@@ -116,8 +152,14 @@
             position: relative;
         }
 
-        .no-btn:hover {
-            transform: scale(1.05);
+        .no-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (hover: hover) {
+            .no-btn:hover {
+                transform: scale(1.05);
+            }
         }
 
         @keyframes celebration {
@@ -134,11 +176,12 @@
         }
 
         .message {
-            margin-top: 30px;
-            font-size: 1.5em;
+            margin-top: clamp(20px, 4vw, 30px);
+            font-size: clamp(1.2rem, 5vw, 1.5rem);
             color: #d63384;
             font-weight: bold;
             display: none;
+            line-height: 1.4;
         }
 
         .message.show {
@@ -147,9 +190,11 @@
         }
 
         .celebration-image {
-            margin-top: 30px;
+            margin-top: clamp(20px, 4vw, 30px);
             max-width: 100%;
-            border-radius: 20px;
+            width: 100%;
+            height: auto;
+            border-radius: clamp(15px, 4vw, 20px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             display: none;
             animation: fadeIn 0.5s ease;
@@ -178,10 +223,41 @@
         }
 
         .fullscreen-image {
-            max-width: 90%;
-            max-height: 90%;
+            max-width: 95%;
+            max-height: 95%;
+            width: auto;
+            height: auto;
             object-fit: contain;
-            border-radius: 10px;
+            border-radius: clamp(8px, 2vw, 10px);
+        }
+
+        /* Mobile-specific optimizations */
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px 15px;
+                width: 95%;
+            }
+
+            .buttons {
+                gap: 12px;
+            }
+
+            button {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .fullscreen-image {
+                max-width: 98%;
+                max-height: 98%;
+            }
+        }
+
+        /* Prevent zoom on input focus (iOS) */
+        @media screen and (max-width: 768px) {
+            input, textarea, select {
+                font-size: 16px;
+            }
         }
 
         @keyframes fadeIn {
@@ -241,18 +317,47 @@
                 }, 2000);
             }
             
-            const containerRect = container.getBoundingClientRect();
-            const buttonRect = noBtn.getBoundingClientRect();
+            // Get actual viewport dimensions (accounting for scrollbars if any)
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
             
-            const maxX = containerRect.width - buttonRect.width - 20;
-            const maxY = containerRect.height - buttonRect.height - 20;
+            // Get button dimensions - force a reflow to get accurate measurements
+            const buttonWidth = noBtn.offsetWidth;
+            const buttonHeight = noBtn.offsetHeight;
             
-            const randomX = Math.random() * maxX;
-            const randomY = Math.random() * maxY;
+            // Offset to ensure button is fully visible with padding
+            const offset = 20;
             
-            noBtn.style.position = 'absolute';
-            noBtn.style.left = randomX + 'px';
-            noBtn.style.top = randomY + 'px';
+            // Calculate safe bounds - ensure button stays fully within viewport
+            const minX = offset;
+            const maxX = viewportWidth - buttonWidth - offset;
+            const minY = offset;
+            const maxY = viewportHeight - buttonHeight - offset;
+            
+            // Ensure we have valid bounds
+            if (maxX < minX || maxY < minY) {
+                // If button is too large, center it
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = Math.max(0, (viewportWidth - buttonWidth) / 2) + 'px';
+                noBtn.style.top = Math.max(0, (viewportHeight - buttonHeight) / 2) + 'px';
+                noBtn.style.transition = 'all 0.3s ease';
+                return;
+            }
+            
+            // Generate random position within safe bounds
+            const randomX = minX + Math.random() * (maxX - minX);
+            const randomY = minY + Math.random() * (maxY - minY);
+            
+            // Clamp to ensure it's within bounds (safety check)
+            const finalX = Math.max(minX, Math.min(maxX, randomX));
+            const finalY = Math.max(minY, Math.min(maxY, randomY));
+            
+            // Position relative to viewport
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = finalX + 'px';
+            noBtn.style.top = finalY + 'px';
+            noBtn.style.right = 'auto';
+            noBtn.style.bottom = 'auto';
             noBtn.style.transition = 'all 0.3s ease';
         }
 
@@ -277,10 +382,26 @@
         }
         setInterval(createHeart, 2000);
 
-        // Make the "No" button run away on hover (when you get close)
+        // Make the "No" button run away on hover (when you get close) - desktop
         noBtn.addEventListener('mouseenter', function() {
             moveNoButton();
         });
+
+        // Touch events for mobile
+        let touchStartTime = 0;
+        noBtn.addEventListener('touchstart', function(e) {
+            touchStartTime = Date.now();
+            // Move button on touch
+            moveNoButton();
+        }, { passive: true });
+
+        noBtn.addEventListener('touchend', function(e) {
+            // Also count as a move if they tried to tap
+            const touchDuration = Date.now() - touchStartTime;
+            if (touchDuration < 300) { // Quick tap
+                moveNoButton();
+            }
+        }, { passive: true });
 
         // Also move on click attempt
         noBtn.addEventListener('click', function(e) {
